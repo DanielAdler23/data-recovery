@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Data Recovery </title>
+		<link rel="stylesheet" type="text/css" media="screen" href="./css/style.css">
+		<link href='http://fonts.googleapis.com/css?family=Droid+Sans' rel='stylesheet' type='text/css'>
+		<meta charset="utf-8">
+		<link href="./iconic.css" media="screen" rel="stylesheet" type="text/css" />
+		<script src="prefix-free.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+
+	</head>
+
+<body ng-app="data">
+	<div class="wrap" >
+		<nav>
+			<ul class="menu">
+				<li ng-controller="getFiles">
+					<a ng-click="allFiles()"><span class="iconic home"></span> Home</a>
+				</li>
+
+				<li ng-controller="controller"><a><span class="iconic plus-alt"></span> Load</a>
+					<ul>
+						<li><a ng-click="LoadFile()">Load All files </a></li>
+						<li><a ng-click="Loadwords()">Load Words  </a></li>
+						<li><a href="#">Load New file  </a></li>
+						<li><a href="#">Load New Words  </a></li>
+					</ul>
+				</li>
+				<li> <a><span class="iconic x-alt "></span>Hide</a></li>
+
+				<li class="search" ng-controller="search">
+
+					<span class="iconic magnifying-glass"></span>
+					<input  type="text" ng-model="search">
+					<input type="submit" value="search" ng-click="submit(search)">
+
+				</li>
+				<!--<li>-->
+					<!--<br><br>-->
+						<!--<span class="iconic unlocked"> </span>-->
+						<!--<input type="file" ng-file-select="onFileSelect($files)">-->
+
+				<!--</li>-->
+
+			</ul>
+			<div class="clearfix"></div>
+		</nav>
+		<section class="center" ng-controller="resultsController">
+
+			<div id="results"></div>
+			<div id="markFile"> </div>
+
+		</section>
+	</div>
+	<script src="./js/controller.js"></script>
+</body>
+
+</html>
