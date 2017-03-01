@@ -1,16 +1,14 @@
 {
-  "name": "app",
+  "name": "frontend",
   "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
+  "description": "[SB Admin](http://startbootstrap.com/template-overviews/sb-admin/) is an open source, admin dashboard template for [Bootstrap](http://getbootstrap.com/) created by [Start Bootstrap](http://startbootstrap.com/).",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "ohadniel",
+  "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.15.2",
-    "express": "^4.14.0"
+    "express": "^4.14.1"
   }
 }

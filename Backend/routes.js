@@ -1,7 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var utils = require('./controllers/controllers')
-// var chokidar = require('chokidar');
 
 router.get('/', function(req, res) {
     console.log('Service Started...')
@@ -11,9 +10,9 @@ router.get('/', function(req, res) {
 router.post('/loadNewFiles', function(req, res) {
     utils.insertNewFiles((err, savedFiles) => {
         if(err)
-            res.status(404).send( { Error: err } )
+            res.status(404).send({status: 404,  error: err })
 
-        res.status(200).send( { Message: savedFiles } )
+        res.status(200).send({status: 200, message: savedFiles })
     })
 })
 
@@ -21,54 +20,88 @@ router.post('/loadNewFiles', function(req, res) {
 router.post('/loadNewWords', function(req, res) {
     utils.insertNewWords((err, info )=> {
         if (err)
-            res.status(404).send({Error: err})
+            res.status(404).send({status: 404, error: err})
 
-        res.status(200).send({Message: info})
+        res.status(200).send({status: 200, message: info})
     })
 })
 
 
+router.get('/getAllFilesAdmin',function(req,res) {
+    console.log('Get All Files')
+    utils.getAllFilesAdmin((err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get Files', error: err})
 
-//
-// router.get('/getWord/:word', function(req, res) {
-//     var word = req.params.word
-//     utils.searchWord(word, (err, docs) => {
-//         if(err) {
-//             console.log(err)
-//             res.status(404).send( { Error: err } )
-//         } else if(!docs) {
-//             res.status(200).send( { Message: "Couldn't find - " + word + " - in the database" } )
-//         } else {
-//             console.log(docs)
-//             res.status(200).send( { result: docs } )
-//         }
-//     })
-// })
-//
-// router.get('/getFiles',function(req,res){
-//     var files = utils.getFiles()
-//     files.exec(function (err,user) {
-//         if(err){
-//             console.log(err)
-//             res.status(404).send( { Error: err } )
-//         }else{
-//             console.log(user)
-//             res.status(200).send( { Result: user } )
-//         }
-//     })
-// })
+        res.status(200).send({message: docs, error: null})
+    })
+})
 
-// var watcher = chokidar.watch('./sources', {
-//     ignored: /[\/\\]\./,
-//     persistent: true,
-//     ignoreInitial: true,
-// });
-//
-// watcher
-//     .on('add', path => {
-//         console.log(`File ${path} has been added`)
-//         utils.addNewFile(path)
-//     })
+
+router.get('/getAllFiles',function(req,res) {
+    console.log('Get All Files')
+    utils.getAllFiles((err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get Files', error: err})
+
+        res.status(200).send({message: docs, error: null})
+    })
+})
+
+
+router.get('/searchFiles/:searchValue', function(req, res) {
+    console.log('Search Files')
+    var searchValue = req.params.searchValue
+    if(!searchValue || searchValue == " ")
+        res.status(404).send({message: 'No search expression given'})
+    utils.searchFiles(searchValue, (err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get Files', error: err})
+
+        res.status(200).send({message: docs, error: null})
+    })
+})
+
+
+router.get('/searchWords/:expression', function(req, res) {
+    console.log('Search Words')
+    var searchExpression = req.params.expression
+    utils.searchWords(searchExpression, (err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get Words', error: err})
+
+        res.status(200).send({message: docs, error: null})
+    })
+})
+
+
+router.get('/toggleFile/:fileId', function(req, res) {
+    console.log('Toggle File')
+    var fileId = req.params.fileId
+    utils.toggleFile(fileId, (err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get Files', error: err})
+
+        res.status(200).send({message: docs, error: null})
+    })
+})
+
+router.get('/getWord/:word', function(req, res) {
+    var word = req.params.word
+    utils.getWord(word, (err, doc) => {
+        if(err) {
+            console.log(err)
+            res.status(404).send({message: 'Failed To Get Word', error: err })
+        } else if(!doc) {
+            res.status(200).send({message: "Couldn't find - " + word + " - in the database"})
+        } else {
+            console.log(doc)
+            res.status(200).send({message: doc, error: null})
+        }
+    })
+
+})
+
 
 
 

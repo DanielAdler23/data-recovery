@@ -10,8 +10,8 @@ app.set('port', port)
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(function(req, res, next){
-    res.header("Access-Control-Allow-Origin", "*")
-    res.header("Access-Control_Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
     res.set("Content-Type", "application/json")
     next()
 })

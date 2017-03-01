@@ -24,7 +24,7 @@ db.on('open', function(){
 });
 
 db.on('disconnected', function(){
-    console.log('Mongoose: Connection Stopped, Reconnect');
+    console.log('Mongoose: Connection Stopped, Reconnecting...');
     mongoose.connect(config.mongoUrl, options);
 });
 

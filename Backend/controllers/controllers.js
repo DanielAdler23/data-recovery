@@ -1,10 +1,12 @@
 var fs = require('fs')
 var mv = require('mv')
 var mongoose = require('mongoose');
+var ObjectId = require('mongodb').ObjectID;
 var File = require('./schemas/fileSchema')
 var Word = require('./schemas/wordSchema')
 var sourceDir = './newFiles'
 var destinationDir = './filesStorage'
+var jsep = require('jsep')
 
 
 module.exports = {
@@ -12,12 +14,22 @@ module.exports = {
     insertNewWords,
     // searchWord: searchWord,
     // updateWordDB: updateWordDB,
-    getFiles,
-    // addNewFile: addNewFile
+    getAllFiles,
+    getAllFilesAdmin,
+    searchFiles,
+    searchWords,
+    getFile,
+    getWord,
+    toggleFile
    }
 
-stopList = [ "a", "the", "it", "is", "in",  "are", "and", "of", "this", "or", "was", "i", "to", "not", "by", "at", "as", "he", "an", "if", "ill", "im", "do"]
-var finalMap = new Map()
+stopList = [ "a", "the", "it", "is", "in",  "are", "and",
+            "of", "this", "or", "was", "i", "to", "not",
+            "by", "at", "as", "he", "an", "if", "ill",
+            "im", "do", "no", "for", "too", "go", "we",
+            "on", "me", "him", "why", "what", "but", "will",
+            "be", "you", "had", "his"]
+
 
 function insertNewFiles(callback) {
     console.log('Insert New Files')
@@ -35,7 +47,8 @@ function insertNewFiles(callback) {
             var newFile = new File({
                 title: files[i].split('.')[0],
                 body: data,
-                parsed: false
+                parsed: false,
+                active: true
             })
 
             newFile.save((err, doc) => {
@@ -53,16 +66,33 @@ function insertNewFiles(callback) {
     return callback(null, savedFiles)
 }
 
+
+
 function insertNewWords(callback) {
     console.log('Insert New Words')
     var inProcess = []
+    var finalMap = new Map()
     File.find({ parsed: false }, function(err, files) {
         if (err) callback(err)
 
 
         for(var file of files) {
-            parseBody(file._id, file.body)
             inProcess.push(file._id)
+
+            var tmpMap = parseBody(file._id, file.body)
+            tmpMap.forEach((value, key) => {
+
+                if(finalMap.has(key)) {
+
+                    var updateWord = finalMap.get(key)
+                    updateWord.hits++;
+                    updateWord.files.push(value)
+                    finalMap.set(key, updateWord)
+
+                } else
+                    finalMap.set(key, { "files" : [ value ] })
+
+            }, tmpMap)
         }
 
         var finalMapArray = Array.from(finalMap)
@@ -80,29 +110,17 @@ function insertNewWords(callback) {
                 return callback(null, 'Success')
             })
             .catch(err => callback('ERROR', null))
-
-
-
-        // var newWords = files.map(file => parseBody(file._id, file.body))
-        // Promise.all(newWords)
-        //     .then(_ => {
-        //         var newWordsMap = finalMap.map((value, key) => {return updateWordDB(value, key)})
-        //         Promise.all(newWordsMap)
-        //             .then(_ => {callback(null, 'All New Words Saved To Database')})
-        //             .catch(err => {return callback(err, null)})
-        //
-        //     })
-        //     .catch(err => callback(err, null))
     })
 }
 
 
+
 const parseBody = (fileId, fileBody) => {
 
-    var wordsMap = new Map();
+    var wordsMap = new Map()
 
     fileBody = fileBody.replace(/'/g, "")
-    fileBody = fileBody.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase();
+    fileBody = fileBody.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase()
 
     var fileWords = fileBody.split(' ')
 
@@ -113,8 +131,8 @@ const parseBody = (fileId, fileBody) => {
 
             var updateWord = wordsMap.get(word);
             updateWord.hits++;
-            updateWord.places.push({ offset: parseInt(i) + 1 });
-            wordsMap.set(word, updateWord);
+            updateWord.places.push({ offset: parseInt(i) + 1 })
+            wordsMap.set(word, updateWord)
         }
         else {
             wordsMap.set(word,
@@ -125,241 +143,237 @@ const parseBody = (fileId, fileBody) => {
                         { offset: parseInt(i) + 1 }
                     ]
                 }
-            );
+            )
         }
     }
-    updateMap(wordsMap)
+    return wordsMap
 }
 
-
-function updateMap(tmpMap) {
-    tmpMap.forEach(function(value, key) {
-
-        if(finalMap.has(key)) {
-
-            var updateWord = finalMap.get(key);
-            updateWord.hits++;
-            updateWord.files.push(value)
-            finalMap.set(key, updateWord);
-
-        } else
-            finalMap.set(key, { "files" : [ value ] });
-
-    }, tmpMap)
-}
 
 
 const updateWordDB = (value, key) => new Promise((resolve, reject) => {
-    console.log('updateWordDB function')
 
-        var filesArray = []
+    Word.findOne({word: key}, {}, (err, doc) => {
+        if (err) return reject(err)
+        else if(!doc) {
+            console.log(`Inserting new word to database - ${key}`)
 
-        for (var i in value.files) {
-            filesArray.push(value.files[i])
+            var filesArray = []
+
+            for (var i in value.files) {
+                filesArray.push(value.files[i])
+            }
+
+            var newWord = new Word({
+                word: key,
+                files: filesArray
+            })
+
+            newWord.save(function (err, doc) {
+                if (err) return reject(err)
+
+                console.log(doc.word + ' - Was Saved To Database');
+                return resolve()
+            })
+
+        } else {
+            console.log(`Updating existing word in database - ${key}`)
+
+            Word.findOneAndUpdate({word: key}, {$push:{files: {$each: value.files}}}, function(err, doc){
+                if(err){
+                    console.error(err)
+                    console.log(`Error while updating key - ${key}`);
+                    return reject(err)
+                }
+
+                console.log(`${key} was successfully updated`);
+                return resolve()
+
+            })
+
         }
-
-        var newWord = new Word({
-            word: key,
-            files: filesArray
-        })
-
-        newWord.save(function (err, doc) {
-            if (err) return reject(err)
-
-            console.log(doc.word + ' - Was Saved To Database');
-            return resolve('Hi')
-        })
-
+    })
 })
 
 
-// function addNewFile(filePath, callback) {
-//
-//     var data = fs.readFileSync(filePath, 'utf8')
-//
-//     var newFile = new File({
-//         title: filePath.split('/')[1].split('.')[0],
-//         body: data
-//     })
-//
-//     newFile.save(function(err, doc) {
-//         if (err) callback(err);
-//
-//         console.log('file saved in database');
-//         updateNewWords(doc)
-//     });
-// }
+function searchWords(expression, callback) {
+    var trimedExpression = expression.replace(/ +?/g, '')
+    var parsedExpression = jsep(trimedExpression)
 
-function updateNewWords(file) {
-    var parsedNewFile = parseBody(file._id, file.body)
+    if(parsedExpression.type == 'LogicalExpression')
+        logicalExpression(parsedExpression, (err, result) => {
+            if(err)
+                return callback(err, null)
 
-    parsedNewFile.forEach(function(value, key) {
-
-        Word.findOneAndUpdate({word: key}, {$push:{files: value}}, {upsert:true}, function(err, doc){
-            if(err){
-                console.log("Something wrong when updating data!");
-            }
-
-            console.log(doc);
-        });
-    }, parsedNewFile)
+            return callback(null, result)
+        })
 }
 
 
+function logicalExpression(expression, callback) {
+    console.log(expression)
+
+    //if(expression.left.type == 'LogicalExpression' && expression.right.type == 'LogicalExpression'){}
+
+    if(expression.left.type == 'LogicalExpression' && expression.right.type == 'Identifier') {
+        logicalExpression(expression.left, (err, result) => {
+            if(err)
+                return callback(err, null)
+
+            chooseOperator(expression.operator, result, expression.right.name, (err, result) => {
+                if(err)
+                    return callback(err, null)
+
+                return callback(null, result)
+            })
+        })
+    }
+
+    if(expression.left.type == 'Identifier' && expression.right.type == 'LogicalExpression') {
+        logicalExpression(expression.right, (err, result) => {
+            if(err)
+                return callback(err, null)
+
+            chooseOperator(expression.operator, expression.left.name, result, (err, result) => {
+                if(err)
+                    return callback(err, null)
+
+                return callback(null, result)
+            })
+        })
+    }
 
 
+    if(expression.left.type == 'Identifier' && expression.right.type == 'Identifier') {
+        chooseOperator(expression.operator, expression.left.name, expression.right.name, (err, result) => {
+            if(err)
+                return callback(err, null)
 
-// function searchWord(search, callback) {
-//
-//     getFiles((err, files) => {
-//
-//         if(err) return callback(err, null)
-//
-//         if(search.includes('&') && search.includes('|')) {
-//
-//             console.log('** OR + AND QUERY **')
-//
-//             andOrOperator(files, search, (err, result) => {
-//                 if(err) return callback(err, null)
-//
-//                 var finalWords = []
-//                 var wordsSplit = search.split('&')
-//                 for(var split of wordsSplit) {
-//                     if (split.includes('|'))
-//                         finalWords = finalWords.concat(split.split('|'))
-//                     else
-//                         finalWords.push(split)
-//                 }
-//                 getWords(finalWords, (err, docs) => {
-//                     if(err) return callback(err, null)
-//                     return callback(null, {words: docs, files: result})
-//                 })
-//             })
-//         } else if(search.includes('&')) {
-//             console.log('** AND QUERY **')
-//
-//             var allAndWords = search.split('&')
-//
-//             getWords(allAndWords, (err, docs) => {
-//                 andOperator(files, search, (result) => {
-//                     return callback(null, {words: docs, files: result})
-//                 })
-//             })
-//         } else if(search.includes('|')) {
-//
-//             console.log('** OR QUERY **')
-//
-//             var allOrWords = search.split('|')
-//
-//             getWords(allOrWords, (err, docs) => {
-//                 orOperator(files, search, (result) => {
-//                     return callback(null, {words: docs, files: result})
-//                 })
-//             })
-//         } else {
-//             var words = []
-//             Word.findOne({'word': search}, {'_id': 0, '__v': 0}, (err, searchedWord) => {
-//                 if(err)
-//                     return callback(err, null)
-//                 else {
-//                     words.push(searchedWord)
-//                     var result = relevantFiles(files, searchedWord)
-//                 }
-//                 return callback(null, {words: words, files: result})
-//             })
-//         }
-//     })
-// }
-//
-//
-// function orOperator(files, search, callback) {
-//     var words
-//     var resultArray = []
-//     words = search.split('|')
-//
-//     for(var orFile of files) {
-//         var orBody = orFile.body
-//         orBody = orBody.replace(/'/g, "")
-//         orBody = orBody.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase();
-//
-//         for(var orWord of words) {
-//             if(orBody.includes(orWord))
-//                 if(!resultArray.includes(orFile))
-//                     resultArray.push(orFile)
-//         }
-//     }
-//     callback(resultArray)
-// }
-//
-// function andOperator(files, search, callback) {
-//     var words
-//     var resultArray = []
-//
-//     if(!search.includes('&')) {
-//         for (var file of files) {
-//             var bod = file.body
-//             bod = bod.replace(/'/g, "")
-//             bod = bod.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase();
-//             if (bod.includes(search))
-//                 if (!resultArray.includes(file))
-//                     resultArray.push(file)
-//         }
-//     } else {
-//         words = search.split('&')
-//
-//         for(var andFile of files) {
-//             var andBody = andFile.body
-//             andBody = andBody.replace(/'/g, "")
-//             andBody = andBody.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase();
-//
-//             if(words.every( (word) => {return andBody.includes(word)}))
-//                 if(!resultArray.includes(andFile))
-//                     resultArray.push(andFile)
-//         }
-//     }
-//
-//     return callback(resultArray)
-// }
-//
-// function andOrOperator(files, search, callback) {
-//     search = search.split('|')
-//
-//     var complexResult = []
-//
-//     for(var section of search) {
-//
-//         andOperator(files, section, (result) => {
-//             for(var res of result) {
-//                 if(!complexResult.includes(res))
-//                     complexResult.push(res)
-//             }
-//         })
-//     }
-//
-//     return callback(null, complexResult)
-// }
-//
-//
-// function relevantFiles(allFiles, searchedWord) {
-//     console.log(searchedWord)
-//
-//     var relevantFiles = []
-//     for(var file of allFiles) {
-//         for(var appears of searchedWord.files) {
-//             if(file._id == appears.fileId)
-//                     relevantFiles.push(file)
-//         }
-//     }
-//     return relevantFiles
-// }
+            return callback(null, result)
+        })
+    }
+}
 
 
+function chooseOperator(operator, left, right, callback) {
+    if (operator == '&&')
+        andOperator(left, right, (err, result) => {
+            if(err)
+                return callback(err, null)
+
+            return callback(null, result)
+        })
+    else if (operator == '||')
+        orOperator(left, right, (err, result) => {
+            if(err)
+                return callback(err, null)
+
+            return callback(null, result)
+        })
+}
 
 
+function orOperator(word1, word2, callback) {
+    let query = []
+    let firstArray
+    let secondArray
+    Array.isArray(word1) ? firstArray = word1 : query.push(word1)
+    Array.isArray(word2) ? secondArray = word2 : query.push(word2)
+
+    if(query.length == 2) {
+        getAllWordFiles(query, (err, result) => {
+            if(err) return callback(err, null)
+
+            if(result.length == 1)
 
 
+            var array1 = result[0]
+            var array2 = result[1]
+
+            for(let item of array1)
+                if(!array2.includes(item))
+                    array2.push(item)
+
+            return callback(null, array2)
+        })
+    }
 
 
+    if(query.length == 1) {
+        console.log('query length = 1')
+        firstArray ? getAllWordFiles(query, (err, result) => {
+            for(let item of result[0])
+                if(!firstArray.includes(item))
+                    firstArray.push(item)
+
+            return callback(null, firstArray)
+        }) : getAllWordFiles(query, (err, result) => {
+            for(let item of result[0])
+                if(!secondArray.includes(item))
+                    secondArray.push(item)
+
+            return callback(null, firstArray)
+        })
+
+    }
+
+
+    if(query.length == 0) {
+        for(let item of firstArray)
+            if(!secondArray.includes(item))
+                secondArray.push(item)
+
+        return callback(null, secondArray)
+    }
+}
+
+
+function andOperator(word1, word2, callback) {
+    let query = []
+    let firstArray
+    let secondArray
+    Array.isArray(word1) ? firstArray = word1 : query.push(word1)
+    Array.isArray(word2) ? secondArray = word2 : query.push(word2)
+
+
+    if(query.length == 2) {
+        getAllWordFiles(query, (err, result) => {
+            if(err)
+                return callback(err, null)
+            let array1 = result[0]
+            let array2 = result[1]
+
+            let resultArray = array1.filter(val => array2.includes(val))
+
+            return callback(null, resultArray)
+        })
+    }
+
+
+    if(query.length == 1) {
+        console.log('query length = 1')
+        firstArray ? getAllWordFiles(query, (err, result) => {
+
+            let resultArray = firstArray.filter(val => result[0].includes(val))
+
+            return callback(null, resultArray)
+        }) : getAllWordFiles(query, (err, result) => {
+
+            let resultArray = secondArray.filter(val => result[0].includes(val))
+
+            return callback(null, resultArray)
+        })
+
+    }
+
+
+    if(query.length == 0) {
+
+        let resultArray = firstArray.filter(val => secondArray.includes(val))
+
+        return callback(null, resultArray)
+    }
+}
 
 
 function getWord(word, callback) {
@@ -370,17 +384,83 @@ function getWord(word, callback) {
 }
 
 function getWords(words, callback) {
-    Word.find({word: { $in: words }}, {'__v':0}, function(err, docs){
+    Word.find({word: { $in: words }}, {'__v':0}, (err, docs) => {
         if(err) return callback(err, null)
         return callback(null, docs);
     });
 }
 
+function getAllWordFiles(word, callback) {
+    Word.find({word: { $in: word }},  {'__v':0}, (err, docs) => {
+        if(err) return callback(err, null)
 
-function getFiles(callback){
+        let fileIds = docs.map(doc => {
+            return doc.files.map(file => {
+                return file.fileId
+            })
+        })
+
+        return callback(null, fileIds);
+    })
+}
+
+function getFile(fileId, callback) {
+    File.find({"_id" : ObjectId(fileId)}, (err, docs) => {
+        if(err) return callback(err, null)
+
+        return callback(null, docs)
+    })
+}
+
+
+function getAllFiles(callback) {
+    File.find({"active": true}, {  '__v': 0}, (err, docs) => {
+        if(err) return callback(err, null)
+
+        return callback(null, docs)
+    })
+}
+
+function getAllFilesAdmin(callback) {
     File.find({},{ '__v': 0}, (err, docs) => {
         if(err) return callback(err, null)
 
         return callback(null, docs)
+    })
+}
+
+function searchFiles(searchValue, callback) {
+    var searchString = new RegExp(searchValue, "i");
+    File.find({"title": searchString, "active": true }, (err, docs) => {
+        if(err) return callback(err, null)
+
+        return callback(null, docs)
+    })
+}
+
+function toggleFile(fileId, callback) {
+    File.find({"_id" : ObjectId(fileId)}, (err, docs) => {
+        if(err) return callback(err, null)
+
+        if(docs[0]._doc.active)
+            File.findOneAndUpdate({"_id" : ObjectId(fileId)}, {active: false}, function(err, doc){
+                if(err){
+                    console.error(err)
+                    console.log(`Error while updating file - ${fileId}`);
+                    return callback(err, null)
+                }
+                console.log(`${fileId} Deactivated`);
+                return callback(null, null)
+            })
+        else
+            File.findOneAndUpdate({"_id" : ObjectId(fileId)}, {active: true}, function(err, doc){
+                if(err){
+                    console.error(err)
+                    console.log(`Error while updating file - ${fileId}`);
+                    return callback(err, null)
+                }
+                console.log(`${fileId} Activated`);
+                return callback(null, null)
+            })
     })
 }
