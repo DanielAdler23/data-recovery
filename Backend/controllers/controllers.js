@@ -197,6 +197,7 @@ const updateWordDB = (value, key) => new Promise((resolve, reject) => {
 
 
 function searchWords(expression, callback) {
+    console.log('searchWords')
     var trimedExpression = expression.replace(/ +?/g, '')
     var parsedExpression = jsep(trimedExpression)
 
@@ -207,11 +208,19 @@ function searchWords(expression, callback) {
 
             return callback(null, result)
         })
+
+    if(parsedExpression.type == 'Identifier')
+        getAllWordFiles([parsedExpression.name], (err, result) => {
+            if(err)
+                return callback(err, null)
+
+            return callback(null, result)
+        })
 }
 
 
 function logicalExpression(expression, callback) {
-    console.log(expression)
+    console.log('logicalExpression')
 
     //if(expression.left.type == 'LogicalExpression' && expression.right.type == 'LogicalExpression'){}
 
@@ -284,9 +293,6 @@ function orOperator(word1, word2, callback) {
         getAllWordFiles(query, (err, result) => {
             if(err) return callback(err, null)
 
-            if(result.length == 1)
-
-
             var array1 = result[0]
             var array2 = result[1]
 
@@ -338,8 +344,8 @@ function andOperator(word1, word2, callback) {
 
     if(query.length == 2) {
         getAllWordFiles(query, (err, result) => {
-            if(err)
-                return callback(err, null)
+            if(err) return callback(err, null)
+
             let array1 = result[0]
             let array2 = result[1]
 
