@@ -96,6 +96,11 @@ function searchFiles() {
 
 function searchWords() {
     $('#allWords').empty()
+    $(document).bind('keypress', e => {
+        if(e.keyCode==13){
+            $('.searchWordValue').trigger('click')
+        }
+    })
     var searchExpression = $('.searchWordValue').val()
     searchExpression.replace(/ +?/g, '')
     if(!searchExpression || searchExpression.trim().length == 0)
