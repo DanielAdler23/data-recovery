@@ -112,7 +112,12 @@ function searchWords() {
             url: "http://localhost:3000/searchWords/" + searchExpression,
             type: "GET",
             success: response => {
-                console.log(response)
+                for(var item of response.message) {
+                    $('#allWords').append(
+                        '<h2 class="fileTitle">' + item.title + '</h2>' +
+                        `<button class="showEntireFile" onclick="">Show File</button>` +
+                        '<br><br>')
+                }
             },
             error: error => {
                 console.log(error)

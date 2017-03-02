@@ -206,11 +206,14 @@ function searchWords(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            return callback(null, result)
+            getFilesTitle(result, (err, titles) => {
+                if(err) return callback(err, null)
+                return callback(null, titles)
+            })
         })
 
     if(parsedExpression.type == 'Identifier')
-        getAllWordFiles([parsedExpression.name], (err, result) => {
+        getAllWordFiles([parsedExpression.name.toLowerCase()], (err, result) => {
             if(err)
                 return callback(err, null)
 
@@ -246,7 +249,7 @@ function logicalExpression(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            chooseOperator(expression.operator, result, expression.right.name, (err, result) => {
+            chooseOperator(expression.operator, result, expression.right.name.toLowerCase(), (err, result) => {
                 if(err)
                     return callback(err, null)
 
@@ -260,7 +263,7 @@ function logicalExpression(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            chooseOperator(expression.operator, expression.left.name, result, (err, result) => {
+            chooseOperator(expression.operator, expression.left.name.toLowerCase(), result, (err, result) => {
                 if(err)
                     return callback(err, null)
 
@@ -271,7 +274,7 @@ function logicalExpression(expression, callback) {
 
 
     if(expression.left.type == 'Identifier' && expression.right.type == 'Identifier') {
-        chooseOperator(expression.operator, expression.left.name, expression.right.name, (err, result) => {
+        chooseOperator(expression.operator, expression.left.name.toLowerCase(), expression.right.name.toLowerCase(), (err, result) => {
             if(err)
                 return callback(err, null)
 
@@ -310,14 +313,20 @@ function orOperator(word1, word2, callback) {
         getAllWordFiles(query, (err, result) => {
             if(err) return callback(err, null)
 
-            var array1 = result[0]
-            var array2 = result[1]
+            if(result.length == 0)
+                return callback(null, [])
+            else if(result.length == 1)
+                return callback(null, result[0])
+            else {
+                var array1 = result[0]
+                var array2 = result[1]
 
-            for(let item of array1)
-                if(!array2.includes(item))
-                    array2.push(item)
+                for(let item of array1)
+                    if(!array2.includes(item))
+                        array2.push(item)
 
-            return callback(null, array2)
+                return callback(null, array2)
+            }
         })
     }
 
@@ -325,12 +334,16 @@ function orOperator(word1, word2, callback) {
     if(query.length == 1) {
         console.log('query length = 1')
         firstArray ? getAllWordFiles(query, (err, result) => {
+            if(result.length == 0)
+                return callback(null, [])
             for(let item of result[0])
                 if(!firstArray.includes(item))
                     firstArray.push(item)
 
             return callback(null, firstArray)
         }) : getAllWordFiles(query, (err, result) => {
+            if(result.length == 0)
+                return callback(null, [])
             for(let item of result[0])
                 if(!secondArray.includes(item))
                     secondArray.push(item)
@@ -363,6 +376,9 @@ function andOperator(word1, word2, callback) {
         getAllWordFiles(query, (err, result) => {
             if(err) return callback(err, null)
 
+            if(result.length == 0 || result.length == 1)
+                return callback(null, [])
+
             let array1 = result[0]
             let array2 = result[1]
 
@@ -376,12 +392,14 @@ function andOperator(word1, word2, callback) {
     if(query.length == 1) {
         console.log('query length = 1')
         firstArray ? getAllWordFiles(query, (err, result) => {
-
+            if(result.length == 0)
+                return callback(null, [])
             let resultArray = firstArray.filter(val => result[0].includes(val))
 
             return callback(null, resultArray)
         }) : getAllWordFiles(query, (err, result) => {
-
+            if(result.length == 0)
+                return callback(null, [])
             let resultArray = secondArray.filter(val => result[0].includes(val))
 
             return callback(null, resultArray)
@@ -446,6 +464,15 @@ function getAllFiles(callback) {
 
 function getAllFilesAdmin(callback) {
     File.find({},{ '__v': 0}, (err, docs) => {
+        if(err) return callback(err, null)
+
+        return callback(null, docs)
+    })
+}
+
+function getFilesTitle(fileIds, callback) {
+    var ids = fileIds.map(id => ObjectId(id))
+    File.find({"_id" : { $in: ids }}, {'__v': 0, 'body': 0, 'parsed': 0, 'active': 0 }, (err, docs) => {
         if(err) return callback(err, null)
 
         return callback(null, docs)

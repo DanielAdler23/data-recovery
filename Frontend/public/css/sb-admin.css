@@ -254,6 +254,10 @@ ul.alert-dropdown {
     margin-left: 1rem;
 }
 
+.showEntireFile {
+    margin-left: 1rem;
+}
+
 #Active {
     background-color: #3c763d;
     color: #ffffff;
