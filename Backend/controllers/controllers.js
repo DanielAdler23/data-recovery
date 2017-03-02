@@ -222,7 +222,24 @@ function searchWords(expression, callback) {
 function logicalExpression(expression, callback) {
     console.log('logicalExpression')
 
-    //if(expression.left.type == 'LogicalExpression' && expression.right.type == 'LogicalExpression'){}
+    if(expression.left.type == 'LogicalExpression' && expression.right.type == 'LogicalExpression') {
+        logicalExpression(expression.left, (err, result1) => {
+            if(err)
+                return callback(err, null)
+
+            logicalExpression(expression.right, (err, result2) => {
+                if(err)
+                    return callback(err, null)
+
+                chooseOperator(expression.operator, result1, result2, (err, finalResult) => {
+                    if(err)
+                        return callback(err, null)
+
+                    return callback(null, finalResult)
+                })
+            })
+        })
+    }
 
     if(expression.left.type == 'LogicalExpression' && expression.right.type == 'Identifier') {
         logicalExpression(expression.left, (err, result) => {
