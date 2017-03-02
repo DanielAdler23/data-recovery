@@ -1,5 +1,4 @@
 
-
 function loadNewFiles() {
     $.ajax({
         url: "http://localhost:3000/loadNewFiles",
@@ -60,14 +59,14 @@ function getAllFiles() {
         type: "GET",
         success: response => {
             for(var item of response.message) {
-                    var parsed = 'notParsed'
-                    if(item.parsed) parsed = 'parsed'
-                    $('#allFiles').append(
-                        '<h2>' + item.title + '</h2>' +
-                        '<h5 class=' + parsed + '></h5>' +
-                        '<p>' + item.body + '</p>' +
-                        '<br><br>')
-                }
+                var parsed = 'notParsed'
+                if(item.parsed) parsed = 'parsed'
+                $('#allFiles').append(
+                    '<h2>' + item.title + '</h2>' +
+                    '<h5 class=' + parsed + '></h5>' +
+                    '<p>' + item.body + '</p>' +
+                    '<br><br>')
+            }
         }
     })
 }
@@ -94,13 +93,16 @@ function searchFiles() {
     })
 }
 
+
+$('.searchWordValue').keypress(function(e){
+    if (e.which == 13){
+        searchWords()
+    }
+});
+
 function searchWords() {
+
     $('#allWords').empty()
-    $(document).bind('keypress', e => {
-        if(e.keyCode==13){
-            $('.searchWordValue').trigger('click')
-        }
-    })
     var searchExpression = $('.searchWordValue').val()
     searchExpression.replace(/ +?/g, '')
     if(!searchExpression || searchExpression.trim().length == 0)
@@ -117,6 +119,7 @@ function searchWords() {
             }
         })
     }
+    document.getElementById('post').value ="";
 }
 
 function passwordPrompt() {
