@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="JavaScriptLibraryMappings">
-    <file url="file://$PROJECT_DIR$/Backend" libraries="{final project/Backend/node_modules}" />
-    <file url="file://$PROJECT_DIR$/Frontend" libraries="{final project/Frontend/node_modules}" />
-    <file url="file://$PROJECT_DIR$/OLD_Frontend" libraries="{final project/OLD_Frontend/node_modules}" />
-    <includedPredefinedLibrary name="ECMAScript 6" />
-  </component>
-</project>
