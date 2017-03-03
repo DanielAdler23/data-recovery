@@ -115,7 +115,7 @@ function searchWords() {
                 for(var item of response.message) {
                     $('#allWords').append(
                         '<h2 class="fileTitle">' + item.title + '</h2>' +
-                        `<button class="showEntireFile" onclick="">Show File</button>` +
+                        `<button class="showEntireFile" id="${item._id}" value="${item.words}" onclick="getFileBody(this.id,this.value)">Show File</button>` +
                         '<br><br>')
                 }
             },
@@ -126,6 +126,9 @@ function searchWords() {
     }
     document.getElementById('post').value ="";
 }
+
+
+
 
 function passwordPrompt() {
     var testV = 1;
@@ -153,4 +156,23 @@ function toggleFileActive(fileId) {
             getAllFilesAdmin()
         }
     })
+}
+
+
+function getFileBody(fileId, words) {
+    $.ajax({
+        url: "http://localhost:3000/getFileObject/" ,
+        type: "POST",
+        data:{
+            fileId,
+            words
+        },
+        success: response => {
+            console.log(response)
+        }
+    })
+
+// console.log(fileId);
+// console.log(words);
+
 }
