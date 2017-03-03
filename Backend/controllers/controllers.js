@@ -210,8 +210,9 @@ function searchWords(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            getFilesTitle(result, (err, titles) => {
+            getFilesTitle(result, parsedWords, (err, titles) => {
                 if(err) return callback(err, null)
+                console.log(titles)
                 return callback(null, titles)
             })
         })
@@ -223,6 +224,8 @@ function searchWords(expression, callback) {
 
             getFilesTitle(result[0], (err, titles) => {
                 if(err) return callback(err, null)
+
+
                 return callback(null, titles)
             })
         })
@@ -477,15 +480,18 @@ function getAllFilesAdmin(callback) {
     })
 }
 
-function getFilesTitle(fileIds, callback) {
+function getFilesTitle(fileIds, parsedWords, callback) {
     var ids = fileIds.map(id => ObjectId(id))
     File.find({"_id" : { $in: ids }}, {'__v': 0, 'body': 0, 'parsed': 0, 'active': 0 }, (err, docs) => {
         if(err) return callback(err, null)
 
-        return callback(null, docs)
-    })
-}
+        for(var item of docs)
+            item.words = parsedWords
 
+        return callback(null, docs)
+    }).lean()
+}
+;
 
 function searchFiles(searchValue, callback) {
     var searchString = new RegExp(searchValue, "i");
