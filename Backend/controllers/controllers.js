@@ -224,7 +224,7 @@ function searchWords(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            getFilesTitle(result[0], (err, titles) => {
+            getFilesTitle(result[0], parsedWords, (err, titles) => {
                 if(err) return callback(err, null)
 
                 return callback(null, titles)
