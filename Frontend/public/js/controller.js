@@ -115,7 +115,7 @@ function searchWords() {
                 for(var item of response.message) {
                     $('#allWords').append(
                         '<h2 class="fileTitle">' + item.title + '</h2>' +
-                        `<button class="showEntireFile" id="${item._id}" value="${item.words}" onclick="getFileBody(this.id,this.value)">Show File</button>` +
+                        `<button class="showEntireFile" id="${item._id}" value="${item.words}" onclick="getFileObject(this.id,this.value)">Show File</button>` +
                         '<br><br>')
                 }
             },
@@ -159,7 +159,7 @@ function toggleFileActive(fileId) {
 }
 
 
-function getFileBody(fileId, words) {
+function getFileObject(fileId, words) {
     $.ajax({
         url: "http://localhost:3000/getFileObject/" ,
         type: "POST",
@@ -169,10 +169,31 @@ function getFileBody(fileId, words) {
         },
         success: response => {
             console.log(response)
+            markWords(response.message.fileBody,response.message.offsets)
+
         }
     })
 
 // console.log(fileId);
 // console.log(words);
+
+}
+
+function markWords(body,offsets){
+
+    body = body.replace(/'/g, "")
+    body = body.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase()
+
+    var fileWords = body.split(' ')
+
+    for(var index in fileWords ) {
+
+            if (offsets.includes(index))
+                $('#allWords').append('<span class="highlighted">' + " " + fileWords[index-1] + '</span>')
+            else
+                $('#allWords').append(" " + fileWords[index-1])
+    }
+
+
 
 }
