@@ -75,6 +75,18 @@ router.get('/searchWords/:expression', function(req, res) {
 })
 
 
+router.get('/getFile/:fileId', function(req, res) {
+    console.log('File Body')
+    var fileId = req.params.fileId
+    utils.getFile(fileId, (err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get File', error: err})
+
+        res.status(200).send({message: docs, error: null})
+    })
+})
+
+
 router.get('/toggleFile/:fileId', function(req, res) {
     console.log('Toggle File')
     var fileId = req.params.fileId

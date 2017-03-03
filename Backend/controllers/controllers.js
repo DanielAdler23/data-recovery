@@ -197,9 +197,13 @@ const updateWordDB = (value, key) => new Promise((resolve, reject) => {
 
 
 function searchWords(expression, callback) {
-    console.log('searchWords')
+    console.log(`searchWords - ${expression}`)
     var trimedExpression = expression.replace(/ +?/g, '')
     var parsedExpression = jsep(trimedExpression)
+
+    var parsedWords = trimedExpression.replace(/[&&||()]/g, '+')
+    parsedWords = parsedWords.split('+')
+    parsedWords = parsedWords.filter(word => word != '')
 
     if(parsedExpression.type == 'LogicalExpression')
         logicalExpression(parsedExpression, (err, result) => {
@@ -217,7 +221,10 @@ function searchWords(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            return callback(null, result)
+            getFilesTitle(result[0], (err, titles) => {
+                if(err) return callback(err, null)
+                return callback(null, titles)
+            })
         })
 }
 
@@ -478,6 +485,7 @@ function getFilesTitle(fileIds, callback) {
         return callback(null, docs)
     })
 }
+
 
 function searchFiles(searchValue, callback) {
     var searchString = new RegExp(searchValue, "i");
