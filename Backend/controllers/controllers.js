@@ -491,7 +491,7 @@ function getFilesTitle(fileIds, parsedWords, callback) {
         return callback(null, docs)
     }).lean()
 }
-;
+
 
 function searchFiles(searchValue, callback) {
     var searchString = new RegExp(searchValue, "i");

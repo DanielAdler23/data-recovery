@@ -87,6 +87,15 @@ router.get('/getFile/:fileId', function(req, res) {
 })
 
 
+router.post('/getFileObject', function(req, res) {
+    console.log('Get File Object')
+    var fileId = req.body.fileId
+    var words = req.body.words
+
+    console.log(fileId + '\n' + words)
+})
+
+
 router.get('/toggleFile/:fileId', function(req, res) {
     console.log('Toggle File')
     var fileId = req.params.fileId
