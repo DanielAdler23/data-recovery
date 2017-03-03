@@ -187,13 +187,17 @@ function markWords(body,offsets){
     var fileWords = body.split(' ')
 
     for(var index in fileWords ) {
-
+        if (index==0)
+            continue
             if (offsets.includes(index))
                 $('#allWords').append('<span class="highlighted">' + " " + fileWords[index-1] + '</span>')
-            else
+            else if(index == fileWords.length-1) {
+                    console.log(index)
+                    if (offsets.includes(index))
+                        $('#allWords').append('<span class="highlighted">' + " " + fileWords[index] + '</span>')
+                    else
+                        $('#allWords').append(" " + fileWords[index])
+            } else
                 $('#allWords').append(" " + fileWords[index-1])
     }
-
-
-
 }
