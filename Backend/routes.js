@@ -91,8 +91,14 @@ router.post('/getFileObject', function(req, res) {
     console.log('Get File Object')
     var fileId = req.body.fileId
     var words = req.body.words
+    var parsedWords = words.split(',')
 
-    console.log(fileId + '\n' + words)
+    utils.getRelevantFiles(fileId, parsedWords, (err, docs) => {
+        if(err)
+            res.status(404).send({message: 'Failed To Get Files', error: err})
+
+        res.status(200).send({message: docs, error: null})
+    })
 })
 
 

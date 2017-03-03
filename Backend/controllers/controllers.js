@@ -16,10 +16,12 @@ module.exports = {
     // updateWordDB: updateWordDB,
     getAllFiles,
     getAllFilesAdmin,
+    getRelevantFiles,
     searchFiles,
     searchWords,
     getFile,
     getWord,
+    getWords,
     toggleFile
    }
 
@@ -212,7 +214,7 @@ function searchWords(expression, callback) {
 
             getFilesTitle(result, parsedWords, (err, titles) => {
                 if(err) return callback(err, null)
-                console.log(titles)
+
                 return callback(null, titles)
             })
         })
@@ -224,7 +226,6 @@ function searchWords(expression, callback) {
 
             getFilesTitle(result[0], (err, titles) => {
                 if(err) return callback(err, null)
-
 
                 return callback(null, titles)
             })
@@ -526,5 +527,32 @@ function toggleFile(fileId, callback) {
                 console.log(`${fileId} Activated`);
                 return callback(null, null)
             })
+    })
+}
+
+
+function getRelevantFiles(fileId, searchWords, callback) {
+    getWords(searchWords, (err, docs) => {
+        if(err) return callback(err, null)
+
+        getFile(fileId, (err, entireFile) => {
+            if(err) return callback(err, null)
+
+            var offsets = []
+
+            for(var doc of docs) {
+                for(var file of doc.files) {
+                    if(file.fileId == fileId)
+                        for(var off of file.places)
+                            offsets.push(off.offset)
+                }
+            }
+
+            var finalResult = {
+                fileBody: entireFile[0].body,
+                offsets: offsets
+            }
+            return callback(null, finalResult)
+        })
     })
 }
