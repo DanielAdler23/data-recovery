@@ -211,12 +211,12 @@ function searchWords(expression, callback) {
         logicalExpression(parsedExpression, (err, result) => {
             if(err)
                 return callback(err, null)
+            if(result)
+                getFilesTitle(result, parsedWords, (err, titles) => {
+                    if(err) return callback(err, null)
 
-            getFilesTitle(result, parsedWords, (err, titles) => {
-                if(err) return callback(err, null)
-
-                return callback(null, titles)
-            })
+                    return callback(null, titles)
+                })
         })
 
     if(parsedExpression.type == 'Identifier')
@@ -224,11 +224,12 @@ function searchWords(expression, callback) {
             if(err)
                 return callback(err, null)
 
-            getFilesTitle(result[0], parsedWords, (err, titles) => {
-                if(err) return callback(err, null)
+            if(result[0])
+                getFilesTitle(result[0], parsedWords, (err, titles) => {
+                    if(err) return callback(err, null)
 
-                return callback(null, titles)
-            })
+                    return callback(null, titles)
+                })
         })
 }
 
