@@ -203,9 +203,10 @@ function searchWords(expression, callback) {
     var trimedExpression = expression.replace(/ +?/g, '')
     var parsedExpression = jsep(trimedExpression)
 
-    var parsedWords = trimedExpression.replace(/[&&||()]/g, '+')
+    var parsedWords = trimedExpression.replace(/[&&||()!]/g, '+')
     parsedWords = parsedWords.split('+')
     parsedWords = parsedWords.filter(word => word != '')
+    parsedWords = parsedWords.map(word => word.toLowerCase())
 
     if(parsedExpression.type == 'LogicalExpression')
         logicalExpression(parsedExpression, (err, result) => {
@@ -229,6 +230,18 @@ function searchWords(expression, callback) {
                     if(err) return callback(err, null)
 
                     return callback(null, titles)
+                })
+        })
+
+    if(parsedExpression.type == 'UnaryExpression')
+        unaryExpression(parsedExpression, (err, result) => {
+            if(err) return callback(err, null)
+
+            if(result)
+                getFilesTitle(result, parsedWords, (err, files) => {
+                    if(err) return callback(err, null)
+
+                    return callback(null, files)
                 })
         })
 }
@@ -293,6 +306,30 @@ function logicalExpression(expression, callback) {
             return callback(null, result)
         })
     }
+}
+
+function unaryExpression(expression, callback) {
+    if(expression.argument.type == 'Identifier')
+        getAllWordFiles(expression.argument.name, (err, result) => {
+            if(err) return callback(err, null)
+
+            getAllFilesIds((err, allIds) => {
+                if(err) return callback(err, null)
+
+                if(result.length == 0)
+                    return callback(null, allIds)
+
+                if(expression.operator == '!') {
+                    var notArray = []
+                    for(var id of allIds)
+                        if(!(result[0].includes(String(id))))
+                            notArray.push(id)
+
+                    return callback(null, notArray)
+                }
+
+            })
+        })
 }
 
 
@@ -428,6 +465,9 @@ function andOperator(word1, word2, callback) {
     }
 }
 
+function notOperator(expression, callback) {
+    
+}
 
 function getWord(word, callback) {
     Word.findOne({word: word}, {'__v': 0}, (err, docs) => {
@@ -469,6 +509,16 @@ function getFile(fileId, callback) {
 function getAllFiles(callback) {
     File.find({"active": true}, {  '__v': 0}, (err, docs) => {
         if(err) return callback(err, null)
+
+        return callback(null, docs)
+    })
+}
+
+function getAllFilesIds(callback) {
+    File.find({}, {  '__v': 0, 'title': 0, 'body': 0, 'parsed': 0, 'active': 0}, (err, docs) => {
+        if(err) return callback(err, null)
+
+        docs = docs.map(doc => doc._id)
 
         return callback(null, docs)
     })

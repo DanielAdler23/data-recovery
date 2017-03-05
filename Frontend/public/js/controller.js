@@ -9,8 +9,6 @@ function loadNewFiles() {
                 setTimeout(() => {
                     $('.loadNewFiles').css({'background-color' : ''});
                 }, 1000)
-
-
             }
         }
     })
@@ -22,7 +20,12 @@ function loadNewWords() {
         url: "http://localhost:3000/loadNewWords",
         type: "POST",
         success: response => {
-            console.log(response)
+            if(response.status == 200) {
+                $('.loadNewWords').css({'background-color' : '#3c763d'});
+                setTimeout(() => {
+                    $('.loadNewWords').css({'background-color' : ''});
+                }, 1000)
+            }
         }
     })
 }
@@ -71,6 +74,22 @@ function getAllFiles() {
     })
 }
 
+$('.fileSearchBar').submit(function () {
+    searchFiles()
+    return false
+})
+
+$('.searchFileValue').keypress(function(e){
+    if (e.which == 13){
+        searchFiles()
+        return false
+    }
+})
+
+$('.getAllFiles').click(function() {
+    getAllFiles()
+})
+
 
 function searchFiles() {
     $('#allFiles').empty()
@@ -93,12 +112,19 @@ function searchFiles() {
     })
 }
 
+$('.wordSearchBar').submit(function () {
+    searchWords()
+    return false
+})
+
 
 $('.searchWordValue').keypress(function(e){
     if (e.which == 13){
         searchWords()
+        return false
     }
-});
+})
+
 
 function searchWords() {
 
@@ -114,9 +140,13 @@ function searchWords() {
             success: response => {
                 for(var item of response.message) {
                     $('#allWords').append(
+                        `<div class="${item._id}">` +
                         '<h2 class="fileTitle">' + item.title + '</h2>' +
-                        `<button class="showEntireFile" id="${item._id}" value="${item.words}" onclick="getFileObject(this.id,this.value)">Show File</button>` +
-                        '<br><br>')
+                        `<button class="showEntireFile hideFile" id="${item._id}" value="${item.words}" onclick="getFileObject(this,this.id,this.value)">Show File</button>` +
+                        '<p></p>' +
+                        '</div>' +
+                        '<hr>' +
+                        '<br>')
                 }
             },
             error: error => {
@@ -126,7 +156,6 @@ function searchWords() {
     }
     document.getElementById('post').value ="";
 }
-
 
 
 
@@ -159,27 +188,47 @@ function toggleFileActive(fileId) {
 }
 
 
-function getFileObject(fileId, words) {
-    $.ajax({
-        url: "http://localhost:3000/getFileObject/" ,
-        type: "POST",
-        data:{
-            fileId,
-            words
-        },
-        success: response => {
-            console.log(response)
-            markWords(response.message.fileBody,response.message.offsets)
 
-        }
-    })
+$('.SeeMore2').click(function(){
+    var $this = $(this);
+    $this.toggleClass('SeeMore2');
+    if($this.hasClass('SeeMore2')){
+        $this.text('See More');
+    } else {
+        $this.text('See Less');
+    }
+});
 
-// console.log(fileId);
-// console.log(words);
 
+function getFileObject(button, fileId, words) {
+
+    $(`#${button.id}`).toggleClass('hideFile')
+    if($(`#${button.id}`).hasClass('hideFile')) {
+        $(`#${button.id}`).text('Show File')
+        $(`.${fileId} > p`).empty()
+        return
+    } else {
+        $(`#${button.id}`).text('Hide File')
+        $(`.${fileId} > p`).empty()
+        for (var word of words)
+            word = word.toLowerCase()
+        console.log(words)
+        $.ajax({
+            url: "http://localhost:3000/getFileObject/",
+            type: "POST",
+            data: {
+                fileId,
+                words
+            },
+            success: response => {
+                console.log(response)
+                markWords(fileId, response.message.fileBody, response.message.offsets)
+            }
+        })
+    }
 }
 
-function markWords(body,offsets){
+function markWords(divClass,body,offsets){
 
     body = body.replace(/'/g, "")
     body = body.replace(/[,"_!-?:.\r\n ]+/g, " ").trim().toLowerCase()
@@ -190,14 +239,14 @@ function markWords(body,offsets){
         if (index==0)
             continue
             if (offsets.includes(index))
-                $('#allWords').append('<span class="highlighted">' + " " + fileWords[index-1] + '</span>')
+                $(`.${divClass} > p`).append('<span class="highlighted">' + " " + fileWords[index-1] + '</span>')
             else if(index == fileWords.length-1) {
                     console.log(index)
                     if (offsets.includes(index))
-                        $('#allWords').append('<span class="highlighted">' + " " + fileWords[index] + '</span>')
+                        $(`.${divClass} > p`).append('<span class="highlighted">' + " " + fileWords[index] + '</span>')
                     else
-                        $('#allWords').append(" " + fileWords[index])
+                        $(`.${divClass} > p`).append(" " + fileWords[index])
             } else
-                $('#allWords').append(" " + fileWords[index-1])
+                $(`.${divClass} > p`).append(" " + fileWords[index-1])
     }
 }

@@ -232,7 +232,19 @@ ul.alert-dropdown {
     color: #df8a13;
 }
 
+.fileSearchBar {
+    margin-bottom: 30px;
+}
+
 .fileSearchBar > input:first-child {
+    width: 50%;
+}
+
+.wordSearchBar {
+    margin-bottom: 30px;
+}
+
+.wordSearchBar > input:first-child {
     width: 50%;
 }
 
@@ -255,7 +267,9 @@ ul.alert-dropdown {
 }
 
 .showEntireFile {
+    position: absolute;
     margin-left: 1rem;
+    margin-top: 5px;
 }
 
 #Active {
